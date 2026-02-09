@@ -10,7 +10,6 @@ public class PlayerService(DataContext context):IPlayerService
         var model = new Player()
         {
             Name = player.Name,
-            IsSearching = player.IsSearching,
         };
         context.Players.Add(model);
         await context.SaveChangesAsync();
