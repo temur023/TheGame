@@ -11,8 +11,7 @@ public class MatchService(DataContext context): IMatchService
 {
     public async Task<PagedResponse<GetMatchesDto>> GetAll(MatchesFilter filter)
     {
-        var query = context.Matches
-            .Where(m=>m.MatchStatus==MatchStatus.WaitingForAPlayer).AsNoTracking();
+        var query = context.Matches.AsNoTracking();
         var total = await query.CountAsync();
         var matches = await query.Skip((filter.PageNumber - 1) * filter.PageSize).Take(filter.PageSize)
             .ToListAsync();
@@ -34,29 +33,33 @@ public class MatchService(DataContext context): IMatchService
         if (find == null) return new Response<Match>(404, "Match not found!");
         return new Response<Match>(200, "Match found!",find);
     }
-    public async Task<Response<string>> JoinMatch(int matchId, int player2Id)
+    public async Task<Response<int>> JoinMatch(JoinMatchDto dto)
     {
-        var match = await context.Matches.FindAsync(matchId);
-        if (match == null) return new Response<string>(404, "Match Not Found!");
+        var match = await context.Matches.FindAsync(dto.MatchId);
+        if (match == null) return new Response<int>(404, "Match Not Found!");
         if (match.MatchStatus == MatchStatus.InProgress)
-            return new Response<string>(200, "Match Room is already full!");
-        match.Player2Id = player2Id;
+            return new Response<int>(400, "Match Room is already full!");
+        if (match.MatchPassword.HasValue && match.MatchPassword != dto.Password)
+            return new Response<int>(400, "Incorrect Password!",0);
+        match.Player2Id = dto.Player2Id;
         match.MatchStatus = MatchStatus.InProgress;
         await context.SaveChangesAsync();
-        return new Response<string>(200, "Joined to the match");
+        return new Response<int>(200, "Joined to the match",match.Id);
     }
-    public async Task<Response<string>> Create(Match match)
+    public async Task<Response<int>> Create(CreateMatchDto match)
     {
         var model = new Match()
         {
             Player1Id = match.Player1Id,
-            Player2Id = match.Player2Id,
-            BoardState = match.BoardState,
+            Player2Id = null,
+            BoardState = "EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY", 
             CurrentPlayerName = match.CurrentPlayerName,
+            MatchStatus = MatchStatus.WaitingForAPlayer,
+            MatchPassword = match.MatchPassword
         };
         context.Matches.Add(model);
         await context.SaveChangesAsync();
-        return new Response<string>(200,"Match created");
+        return new Response<int>(200,"Match Created", model.Id);
     }
 
     public async Task<Response<string>> MakeMove(int playerId, int matchId, int cellIndex)
@@ -92,9 +95,11 @@ public class MatchService(DataContext context): IMatchService
             }
         }
         
-        match.CurrentPlayerName = (match.Player1Id == playerId) ? match.Player2.Name : match.Player1.Name;
+        match.CurrentPlayerName = (match.Player1Id == playerId) 
+            ? (match.Player2?.Name ?? "Waiting...")
+            : match.Player1.Name;
+
         await context.SaveChangesAsync();
-        
         return new Response<string>(200, "Move recorded");
     }
     private string? CheckWinner(string[] board)

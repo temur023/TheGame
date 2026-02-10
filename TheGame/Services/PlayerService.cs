@@ -5,7 +5,7 @@ namespace TheGame.Services;
 
 public class PlayerService(DataContext context):IPlayerService
 {
-    public async Task<Response<string>> Create(Player player)
+    public async Task<Response<int>> Create(Player player)
     {
         var model = new Player()
         {
@@ -13,6 +13,6 @@ public class PlayerService(DataContext context):IPlayerService
         };
         context.Players.Add(model);
         await context.SaveChangesAsync();
-        return new Response<string>(200,"Player created");
+        return new Response<int>(200,"Player created",model.Id);
     }
 }

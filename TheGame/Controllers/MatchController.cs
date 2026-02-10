@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using TheGame.Dtos;
 using TheGame.Entities;
 using TheGame.Filters;
 using TheGame.Services;
@@ -19,7 +20,7 @@ public class MatchController(IMatchService service):Controller
     }
 
     [HttpPost("create")]
-    public async Task<IActionResult> Create(Match match)
+    public async Task<IActionResult> Create([FromBody] CreateMatchDto match)
     {
         var response = await service.Create(match);
         if (response.StatusCode != 200)
@@ -28,9 +29,9 @@ public class MatchController(IMatchService service):Controller
     }
 
     [HttpPut("join-match")]
-    public async Task<IActionResult> JoinMatch(int matchId, int player2Id)
+    public async Task<IActionResult> JoinMatch([FromBody] JoinMatchDto dto)
     {
-        var response = await service.JoinMatch(matchId, player2Id);
+        var response = await service.JoinMatch(dto);
         if (response.StatusCode != 200)
             return StatusCode(response.StatusCode, response);
         return Ok(response);

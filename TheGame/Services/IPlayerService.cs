@@ -5,5 +5,5 @@ namespace TheGame.Services;
 
 public interface IPlayerService
 {
-    Task<Response<string>> Create(Player player);
+    Task<Response<int>> Create(Player player);
 }

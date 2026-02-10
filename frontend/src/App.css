@@ -1,0 +1,24 @@
+.tic-tac-toe-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 100px); 
+    grid-template-rows: repeat(3, 100px);   
+    margin: 20px auto;
+    width: fit-content;
+}
+
+.square-btn {
+    width: 100px;
+    height: 100px;
+    background-color: white;
+    border: 2px solid #333;
+    font-size: 3rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.square-btn:hover {
+    background-color: #f0f0f0;
+}
