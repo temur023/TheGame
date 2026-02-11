@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\irgas\\RiderProjects\\TheGame\\TheGame\\TheGame.csproj": {}
+    "/Users/fsdf/Documents/Projects/TheGame/TheGame/TheGame.csproj": {}
   },
   "projects": {
-    "C:\\Users\\irgas\\RiderProjects\\TheGame\\TheGame\\TheGame.csproj": {
+    "/Users/fsdf/Documents/Projects/TheGame/TheGame/TheGame.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\irgas\\RiderProjects\\TheGame\\TheGame\\TheGame.csproj",
+        "projectUniqueName": "/Users/fsdf/Documents/Projects/TheGame/TheGame/TheGame.csproj",
         "projectName": "TheGame",
-        "projectPath": "C:\\Users\\irgas\\RiderProjects\\TheGame\\TheGame\\TheGame.csproj",
-        "packagesPath": "C:\\Users\\irgas\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\irgas\\RiderProjects\\TheGame\\TheGame\\obj\\",
+        "projectPath": "/Users/fsdf/Documents/Projects/TheGame/TheGame/TheGame.csproj",
+        "packagesPath": "/Users/fsdf/.nuget/packages/",
+        "outputPath": "/Users/fsdf/Documents/Projects/TheGame/TheGame/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\irgas\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/Users/fsdf/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
@@ -90,7 +90,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.310/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/Users/fsdf/.dotnet/sdk/9.0.304/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

@@ -118,7 +118,7 @@ const handleJoin = async (matchId, hasPassword) => {
                                 <tr>
                                     <th>Player Name</th>
                                     <th>Status</th>
-                                    <th>Action</th>
+                                    <th className="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -126,7 +126,7 @@ const handleJoin = async (matchId, hasPassword) => {
                                     matches.map((matchItem) => (
                                         <tr key={matchItem.id} className="align-middle">
                                             <td>
-                                                {matchItem.currentPlayerName} 
+                                                {matchItem.Player1Id} 
                                                 {matchItem.matchPassword && <span className="ms-2">🔒</span>}
                                             </td>
                                             <td>

@@ -1,8 +1,10 @@
 .tic-tac-toe-grid {
     display: grid;
+    border: 3px solid black;
+    border-radius: 10px;
     grid-template-columns: repeat(3, 100px);
     grid-template-rows: repeat(3, 100px);
-    gap: 10px;
+    gap: 1px;
     margin: 20px auto;
     width: fit-content;
 }
