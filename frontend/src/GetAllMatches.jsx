@@ -15,7 +15,7 @@ function GetAllMatches() {
     });
 
     const navigate = useNavigate();
-    const api_url = "http://localhost:5104";
+    const api_url = "htpps://thegame-production-9b97.up.railway.app";
     const currentPlayerName = localStorage.getItem("playerName");
 
     const fetchData = async () => {

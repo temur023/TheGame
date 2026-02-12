@@ -15,7 +15,7 @@ builder.Services.AddSignalR();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options => {
     options.AddDefaultPolicy(policy => {
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins("http://determined-success-production-6aba.up.railway.app")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
