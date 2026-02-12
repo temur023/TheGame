@@ -6,7 +6,7 @@ function CreatePlayer() {
     const [name, setName] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
-
+    const api_url = "https://thegame-production-9b97.up.railway.app"
 
     useEffect(() => {
         const existingId = localStorage.getItem("playerId");

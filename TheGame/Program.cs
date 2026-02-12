@@ -15,7 +15,7 @@ builder.Services.AddSignalR();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options => {
     options.AddDefaultPolicy(policy => {
-        policy.WithOrigins("http://determined-success-production-6aba.up.railway.app")
+        policy.WithOrigins("https://determined-success-production-6aba.up.railway.app")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -35,5 +35,9 @@ app.UseCors();
 app.UseAuthorization();
 app.MapHub<GameHub>("/gamehub");
 app.MapControllers();
-
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+    context.Database.Migrate(); 
+}
 app.Run();
