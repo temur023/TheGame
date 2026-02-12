@@ -77,132 +77,70 @@ public class MatchService(DataContext context, IServiceScopeFactory scopeFactory
         await context.SaveChangesAsync();
         return new Response<int>(200, "Match Created", model.Id);
     }
-    public async Task<Response<int>> CreateAiMatch(int player1Id)
-    {
-        var player = await context.Players.FindAsync(player1Id);
-        if (player == null) return new Response<int>(404, "Player not found!");
-
-        var model = new Match()
-        {
-            Player1Id = player.Id,
-            Player2Id = null,
-            BoardState = "EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY", 
-            CurrentPlayerName = player.Name,
-            CurrentPlayerId = player.Id, 
-            MatchStatus = MatchStatus.InProgress, 
-            MatchPassword = null
-        };
     
-        context.Matches.Add(model);
-        await context.SaveChangesAsync();
-        return new Response<int>(200, "AI Match Created", model.Id);
-    }
     public async Task<Response<string>> MakeMove(MakeMoveDto dto, Player? player = null)
-{
-    var match = await context.Matches
-        .Include(m => m.Player1)
-        .Include(m => m.Player2)
-        .FirstOrDefaultAsync(m => m.Id == dto.MatchId);
-
-    if (match == null) return new Response<string>(404, "Match not found!");
-    if (match.Player2Id == null) return new Response<string>(400, "Waiting for an opponent.");
-    if (match.MatchStatus == MatchStatus.Finished) return new Response<string>(400, "Game already finished.");
-    
-    var result = await ApplyMove(match, dto.CellIndex, dto.PlayerId);
-    if (result.StatusCode != 200) return result;
-    
-    if (match.Player2Id == null && match.MatchStatus == MatchStatus.InProgress)
     {
-        int aiMove = GetRandomAvailableMove(match.BoardState);
-        if (aiMove != -1)
+        var match = await context.Matches
+            .Include(m => m.Player1)
+            .Include(m => m.Player2)
+            .FirstOrDefaultAsync(m => m.Id == dto.MatchId);
+
+        if (match == null) return new Response<string>(404, "Match not found!");
+        if (match.Player2Id == null) return new Response<string>(400, "Waiting for an opponent.");
+
+        var board = match.BoardState.Split(',');
+        bool isPlayer1 = (dto.PlayerId == match.Player1Id);
+        board[dto.CellIndex] = isPlayer1 ? "X" : "O";
+        match.BoardState = string.Join(",", board);
+
+        var outcome = CheckWinner(board);
+        if (outcome != null) 
         {
-            await ApplyMove(match, aiMove, 0);
-        }
-    }
-
-    await context.SaveChangesAsync();
-    
-    return match.MatchStatus == MatchStatus.Finished 
-        ? new Response<string>(200, "FINISHED") 
-        : new Response<string>(200, "SUCCESS");
-}
-    
-private async Task<Response<string>> ApplyMove(Match match, int cellIndex, int playerId)
-{
-    var board = match.BoardState.Split(',');
-    
-    if (board[cellIndex] != "EMPTY") 
-        return new Response<string>(400, "Cell already taken!");
-
-    bool isPlayer1 = (playerId == match.Player1Id);
-    board[cellIndex] = isPlayer1 ? "X" : "O";
-    match.BoardState = string.Join(",", board);
-
-    var outcome = CheckWinner(board);
-    if (outcome != null)
-    {
-        match.MatchStatus = MatchStatus.Finished;
-        var p1 = await context.Players.FindAsync(match.Player1Id);
-        var p2 = await context.Players.FindAsync(match.Player2Id);
-
-        if (outcome == "X") {
-            match.WinnerName = p1?.Name ?? "Player 1";
-            if (p1 != null) p1.Wins++;
-            if (p2 != null) p2.Losses++; 
-        }
-        else if (outcome == "O") {
-            match.WinnerName = p2?.Name ?? "Stupid AI";
-            if (p2 != null) p2.Wins++;
-            if (p1 != null) p1.Losses++;
-        }
-        else {
-            match.WinnerName = "Draw";
-            if (p1 != null) p1.Draws++;
-            if (p2 != null) p2.Draws++;
-        }
-
-        DeleteMatchAfterDelay(match.Id);
-        return new Response<string>(200, "FINISHED");
-    }
-    
-    match.CurrentPlayerId = isPlayer1 ? match.Player2Id ?? 0 : match.Player1Id;
-    match.CurrentPlayerName = isPlayer1 
-        ? (match.Player2?.Name ?? "Stupid AI") 
-        : (match.Player1?.Name ?? "Player 1");
-
-    return new Response<string>(200, "SUCCESS");
-}
-
-private int GetRandomAvailableMove(string boardState)
-{
-    var board = boardState.Split(',');
-    var availableIndices = board
-        .Select((val, idx) => new { val, idx })
-        .Where(x => x.val == "EMPTY")
-        .Select(x => x.idx)
-        .ToList();
-
-    if (availableIndices.Count == 0) return -1;
-
-    Random rand = new Random();
-    return availableIndices[rand.Next(availableIndices.Count)];
-}
-
-private void DeleteMatchAfterDelay(int matchId)
-{
-    _ = Task.Run(async () => {
-        await Task.Delay(60000); 
-        using (var scope = scopeFactory.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<DataContext>();
-            var matchToDelete = await db.Matches.FindAsync(matchId);
-            if (matchToDelete != null) {
-                db.Matches.Remove(matchToDelete);
-                await db.SaveChangesAsync();
+            var p1 = await context.Players.FindAsync(match.Player1Id);
+            var p2 = await context.Players.FindAsync(match.Player2Id);
+            match.MatchStatus = MatchStatus.Finished;
+            if (outcome == "X") {
+                match.WinnerName = match.Player1.Name;
+                p1.Wins++;
+                p2.Losses++;
             }
+            else if (outcome == "O") {
+                match.WinnerName = match.Player2.Name;
+                p2.Wins++;
+                p1.Losses++;
+            }
+            else if (outcome == "Draw") {
+                match.WinnerName = "Draw";
+                p1.Draws++;
+                p2.Draws++;
+            }
+            await context.SaveChangesAsync();
+            
+            _ = Task.Run(async () => {
+                await Task.Delay(60000); 
+                using (var scope = scopeFactory.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<DataContext>();
+                    var matchToDelete = await db.Matches.FindAsync(dto.MatchId);
+                    if (matchToDelete != null) {
+                        db.Matches.Remove(matchToDelete);
+                        await db.SaveChangesAsync();
+                    }
+                }
+            });
+
+            return new Response<string>(200, "FINISHED"); 
         }
-    });
-}
+
+        match.CurrentPlayerId = isPlayer1 ? match.Player2Id.Value : match.Player1Id;
+        match.CurrentPlayerName = isPlayer1 
+            ? (match.Player2?.Name ?? "Player 2") 
+            : (match.Player1?.Name ?? "Player 1");
+
+        await context.SaveChangesAsync();
+        return new Response<string>(200, "SUCCESS");
+    }
+
     public async Task<Response<List<GetLeaderboardDto>>> Leaderboard()
     {
         var players = await context.Players.OrderByDescending(p => p.Wins).Take(10)

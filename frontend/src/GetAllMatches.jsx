@@ -53,22 +53,7 @@ function GetAllMatches() {
         }
     };
 
-    const handleAiMatchCreation = async () => {
-    try {
-        const pId = parseInt(localStorage.getItem("playerId"));
-        
-        const response = await axios.post(`${api_url}/api/Match/create-ai-game`, { 
-            player1Id: pId 
-        });
-        
-        if (response.data.statusCode === 200) {
-            navigate(`/game/${response.data.data}`);
-        }
-    } catch (error) {
-        console.error("AI Game Error Details:", error.response?.data);
-        alert("Failed to start AI game");
-    }
-};
+    // Removed handleAiMatchCreation from here
 
     useEffect(() => {
         fetchData();
@@ -79,9 +64,7 @@ function GetAllMatches() {
     const myStats = leaderboard.find(p => p.name === currentPlayerName) || { wins: 0, draws: 0, losses: 0 };
 
     const getStatusBadge = (match) => {
-        if (match.player2Id === 0 && match.matchStatus === 1) {
-            return <span className="badge rounded-pill bg-info text-dark">Solo vs AI</span>;
-        }
+        // Removed AI specific badge logic
         switch (match.matchStatus) {
             case 0: return <span className="badge rounded-pill bg-primary-subtle text-primary">Waiting</span>;
             case 1: return <span className="badge rounded-pill bg-warning-subtle text-warning">In Progress</span>;
@@ -144,7 +127,6 @@ function GetAllMatches() {
             backgroundAttachment: 'fixed'
         }}>
             <div className="row pt-5 justify-content-center px-3">
-                
                 <div className="col-lg-7 mb-4">
                     <div className="card shadow border-0 p-4 bg-white rounded-4 h-100">
                         <div className="d-flex flex-wrap justify-content-between align-items-center mb-4">
@@ -159,15 +141,19 @@ function GetAllMatches() {
                                         <div className="fw-bold text-success small">{myStats.wins}</div>
                                         <div className="text-muted x-small" style={{fontSize: '0.6rem'}}>WINS</div>
                                     </div>
+                                    <div className="text-center px-2  border-end">
+                                        <div className="fw-bold text-warning small">{myStats.draws}</div>
+                                        <div className="text-muted x-small" style={{fontSize: '0.6rem'}}>DRAWS</div>
+                                    </div>
                                     <div className="text-center px-2">
                                         <div className="fw-bold text-danger small">{myStats.losses}</div>
                                         <div className="text-muted x-small" style={{fontSize: '0.6rem'}}>LOSSES</div>
                                     </div>
+                                    
                                 </div>
                                 
-                                <button className="btn btn-outline-dark fw-bold shadow-sm" onClick={handleAiMatchCreation}>
-                                     vs AI
-                                </button>
+                                {/* AI BUTTON REMOVED FROM HERE */}
+                                
                                 <button className="btn btn-primary fw-bold shadow-sm" onClick={() => setShowModal(true)}>
                                     + Create Match
                                 </button>

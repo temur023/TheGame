@@ -64,11 +64,5 @@ public class MatchController(IMatchService service):Controller
             return StatusCode(response.StatusCode, response);
         return Ok(response);
     }
-    [HttpPost("create-ai-game")]
-    public async Task<IActionResult> CreateAiGame([FromBody] CreateAiMatchDto dto)
-    {
-        var result = await service.CreateAiMatch(dto.Player1Id);
-        return StatusCode(result.StatusCode, result);
-    }
     
 }
