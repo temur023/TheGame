@@ -15,7 +15,7 @@ function GetAllMatches() {
     });
 
     const navigate = useNavigate();
-    const api_url = "htpps://thegame-production-9b97.up.railway.app";
+    const api_url = "https://thegame-production-9b97.up.railway.app";
     const currentPlayerName = localStorage.getItem("playerName");
 
     const fetchData = async () => {
@@ -53,7 +53,6 @@ function GetAllMatches() {
         }
     };
 
-    // Removed handleAiMatchCreation from here
 
     useEffect(() => {
         fetchData();
@@ -64,7 +63,6 @@ function GetAllMatches() {
     const myStats = leaderboard.find(p => p.name === currentPlayerName) || { wins: 0, draws: 0, losses: 0 };
 
     const getStatusBadge = (match) => {
-        // Removed AI specific badge logic
         switch (match.matchStatus) {
             case 0: return <span className="badge rounded-pill bg-primary-subtle text-primary">Waiting</span>;
             case 1: return <span className="badge rounded-pill bg-warning-subtle text-warning">In Progress</span>;
@@ -152,7 +150,6 @@ function GetAllMatches() {
                                     
                                 </div>
                                 
-                                {/* AI BUTTON REMOVED FROM HERE */}
                                 
                                 <button className="btn btn-primary fw-bold shadow-sm" onClick={() => setShowModal(true)}>
                                     + Create Match

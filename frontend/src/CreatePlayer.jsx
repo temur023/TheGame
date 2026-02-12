@@ -28,7 +28,7 @@ function CreatePlayer() {
 
         try {
             const createPlayer = { Name: name };
-            const response = await axios.post("htpps://thegame-production-9b97.up.railway.app/api/Player/create", createPlayer);
+            const response = await axios.post(`${api_url}/api/Player/create`, createPlayer);
             const data = response.data;
             if (data.statusCode === 200 || data.StatusCode === 200) {
                 localStorage.setItem("playerName", name);

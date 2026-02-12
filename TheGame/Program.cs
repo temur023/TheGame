@@ -23,7 +23,7 @@ builder.Services.AddCors(options => {
 });
 
 var app = builder.Build();
-
+app.UseCors();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -31,13 +31,16 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors();
+
 app.UseAuthorization();
 app.MapHub<GameHub>("/gamehub");
 app.MapControllers();
-using (var scope = app.Services.CreateScope())
-{
+try {
+    using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<DataContext>();
-    context.Database.Migrate(); 
+    await context.Database.MigrateAsync();
+    Console.WriteLine("Database migration successful.");
+} catch (Exception ex) {
+    Console.WriteLine($"Migration failed: {ex.Message}");
 }
 app.Run();
