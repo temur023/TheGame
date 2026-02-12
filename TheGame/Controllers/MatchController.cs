@@ -18,7 +18,18 @@ public class MatchController(IMatchService service):Controller
             return StatusCode(response.StatusCode, response);
         return Ok(response);
     }
-
+    
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var response = await service.GetById(id); 
+        
+        if (response.StatusCode != 200)
+            return StatusCode(response.StatusCode, response);
+            
+        return Ok(response);
+    }
+    
     [HttpPost("create")]
     public async Task<IActionResult> Create([FromBody] CreateMatchDto match)
     {
@@ -36,4 +47,28 @@ public class MatchController(IMatchService service):Controller
             return StatusCode(response.StatusCode, response);
         return Ok(response);
     }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteMatch(int id)
+    {
+        var response = await service.Delete(id);
+        if (response.StatusCode != 200)
+            return StatusCode(response.StatusCode, response);
+        return Ok(response);
+    }
+    [HttpGet("leaderboard")]
+    public async Task<IActionResult> GetLeaderboard()
+    {
+        var response = await service.Leaderboard();
+        if (response.StatusCode != 200)
+            return StatusCode(response.StatusCode, response);
+        return Ok(response);
+    }
+    [HttpPost("create-ai-game")]
+    public async Task<IActionResult> CreateAiGame([FromBody] CreateAiMatchDto dto)
+    {
+        var result = await service.CreateAiMatch(dto.Player1Id);
+        return StatusCode(result.StatusCode, result);
+    }
+    
 }

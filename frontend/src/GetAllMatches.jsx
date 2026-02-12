@@ -1,218 +1,281 @@
-import React, {useState, useEffect, use} from "react";
-import { HubConnectionBuilder } from '@microsoft/signalr';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-function GetAllMatches(){
+
+function GetAllMatches() {
     const [showModal, setShowModal] = useState(false);
     const [roomPassword, setRoomPassword] = useState("");
     const [matches, setMatches] = useState([]);
+    const [leaderboard, setLeaderboard] = useState([]);
     const [message, setMessage] = useState({ text: "", type: "" });
     const [total, setTotal] = useState(0);
     const [filter, setFilter] = useState({
         pageNumber: 1,
         pageSize: 10
     });
+
     const navigate = useNavigate();
     const api_url = "http://localhost:5104";
+    const currentPlayerName = localStorage.getItem("playerName");
 
-const handleJoin = async (matchId, hasPassword) => {
-    let passwordInput = null;
+    const fetchData = async () => {
+        await fetchMatches();
+        await fetchLeaderboard();
+    };
 
-    if (hasPassword) {
-        passwordInput = prompt("This room is private. Please enter the password:");
-        if (!passwordInput) return; 
-    }
+    const fetchLeaderboard = async () => {
+        try {
+            const response = await axios.get(`${api_url}/api/Match/leaderboard`);
+            if (response.data.statusCode === 200) {
+                setLeaderboard(response.data.data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch leaderboard", error);
+        }
+    };
 
+    const fetchMatches = async () => {
+        try {
+            const requestParams = {
+                PageSize: filter.pageSize,
+                PageNumber: filter.pageNumber
+            };
+            const response = await axios.get(`${api_url}/api/Match/get-all`, {
+                params: requestParams
+            });
+
+            if (response.data.statusCode === 200) {
+                setMatches(response.data.data);
+                setTotal(response.data.totalRecords || 0);
+            }
+        } catch (error) {
+            setMessage({ text: "Error loading matches", type: "danger" });
+        }
+    };
+
+    const handleAiMatchCreation = async () => {
     try {
-        const playerId = localStorage.getItem("playerId");
-        const dto = {
-            MatchId: matchId,
-            Player2Id: parseInt(playerId),
-            Password: passwordInput ? parseInt(passwordInput) : null
-        };
-
-        const response = await axios.put(`${api_url}/api/Match/join-match`, dto);
-
-        if (response.data.statusCode === 200) {
-            navigate(`/game/${matchId}`);
-        }
-    } catch (error) {
-        alert(error.response?.data?.message || "Failed to join match");
-    }
-};
-   const handleMatchCreation = async () => {
-    try {
-        const storedId = localStorage.getItem("playerId");
-        const playerName = localStorage.getItem("playerName");
-
-        const pId = storedId ? parseInt(storedId, 10) : 0;
-
-        if (!pId || isNaN(pId)) {
-            alert("Player ID missing. Try logging in again.");
-            return;
-        }
-
-        const matchData = {
-            Player1Id: pId,
-            CurrentPlayerName: playerName || "Guest",
-            MatchPassword: roomPassword ? parseInt(roomPassword, 10) : null 
-        };
-
-        const response = await axios.post(`${api_url}/api/Match/create`, matchData);
-
-        if (response.data.statusCode === 200) {
-            setShowModal(false);
-            navigate(`/game/${response.data.data}`); 
-        }
-    } catch (error) {
-        console.error("API Error Details:", error.response?.data);
-        alert(error.response?.data?.message || "Failed to create match");
-    }
-};
-    const fetchMatches = async() =>{
-        try{
-        const requestParams = {
-            PageSize: filter.pageSize,
-            PageNumber: filter.pageNumber
-        }
-        const response = await axios.get(`${api_url}/api/Match/get-all`,{
-            params: requestParams
+        const pId = parseInt(localStorage.getItem("playerId"));
+        
+        const response = await axios.post(`${api_url}/api/Match/create-ai-game`, { 
+            player1Id: pId 
         });
-        if(response.data.statusCode===200){
-            setMatches(response.data.data)
-            
+        
+        if (response.data.statusCode === 200) {
+            navigate(`/game/${response.data.data}`);
         }
-        setTotal(response.data.totalRecords || 0);
-        }catch(error){
-            setMessage({text:error.response?.data?.message, type:"danger"})
-        }
+    } catch (error) {
+        console.error("AI Game Error Details:", error.response?.data);
+        alert("Failed to start AI game");
     }
-    const totalPages = Math.ceil(total/filter.pageSize)
+};
+
     useEffect(() => {
-        fetchMatches();
-        const interval = setInterval(fetchMatches, 5000);
+        fetchData();
+        const interval = setInterval(fetchData, 5000);
         return () => clearInterval(interval);
     }, [filter.pageNumber, filter.pageSize]);
-    useEffect(() => {
-    fetchMatches();
-}, [filter.pageNumber]);
-    return(
-        <>
-            <div className="container-fluid bg-light w-100 vh-100 d-flex justify-content-center " style={{
+
+    const myStats = leaderboard.find(p => p.name === currentPlayerName) || { wins: 0, draws: 0, losses: 0 };
+
+    const getStatusBadge = (match) => {
+        if (match.player2Id === 0 && match.matchStatus === 1) {
+            return <span className="badge rounded-pill bg-info text-dark">Solo vs AI</span>;
+        }
+        switch (match.matchStatus) {
+            case 0: return <span className="badge rounded-pill bg-primary-subtle text-primary">Waiting</span>;
+            case 1: return <span className="badge rounded-pill bg-warning-subtle text-warning">In Progress</span>;
+            case 2: return <span className="badge rounded-pill bg-secondary-subtle text-secondary">Finished</span>;
+            default: return <span className="badge rounded-pill bg-light text-dark">Unknown</span>;
+        }
+    };
+
+    const handleJoin = async (matchId, hasPassword) => {
+        let passwordInput = null;
+        if (hasPassword) {
+            passwordInput = prompt("Enter room password:");
+            if (!passwordInput) return;
+        }
+
+        try {
+            const playerId = localStorage.getItem("playerId");
+            const dto = {
+                MatchId: matchId,
+                Player2Id: parseInt(playerId),
+                Password: passwordInput ? parseInt(passwordInput) : null
+            };
+
+            const response = await axios.put(`${api_url}/api/Match/join-match`, dto);
+            if (response.data.statusCode === 200) {
+                navigate(`/game/${matchId}`);
+            }
+        } catch (error) {
+            alert(error.response?.data?.message || "Failed to join");
+        }
+    };
+
+    const handleMatchCreation = async () => {
+        try {
+            const pId = parseInt(localStorage.getItem("playerId"));
+            const matchData = {
+                Player1Id: pId,
+                CurrentPlayerName: currentPlayerName || "Guest",
+                MatchPassword: roomPassword ? parseInt(roomPassword, 10) : null
+            };
+
+            const response = await axios.post(`${api_url}/api/Match/create`, matchData);
+            if (response.data.statusCode === 200) {
+                setShowModal(false);
+                navigate(`/game/${response.data.data}`);
+            }
+        } catch (error) {
+            alert("Failed to create match");
+        }
+    };
+
+    const totalPages = Math.ceil(total / filter.pageSize);
+
+    return (
+        <div className="container-fluid min-vh-100 w-100" style={{
             backgroundImage: `url('https://c8.alamy.com/comp/2GGD3MM/tic-tac-toe-game-texture-hand-drawn-seamless-cross-shapes-pattern-black-elements-on-white-background-2GGD3MM.jpg')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat' }}>
-                <div className="card col-11 m-5 bg-blue align-items-center">
-                    <h1 className="mt-3">Game Lobby</h1>
-                    <button 
-                        className="col-3 btn btn-primary fw-bold shadow-sm" 
-                        onClick={() => setShowModal(true)}
-                    >
-                        + Create Match
-                    </button>
-                    <div className="col-8 table-responsive mt-4">
-                        <table className="table table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Player Name</th>
-                                    <th>Status</th>
-                                    <th className="text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {matches.length > 0 ? (
-                                    matches.map((matchItem) => (
-                                        <tr key={matchItem.id} className="align-middle">
-                                            <td>
-                                                {matchItem.Player1Id} 
-                                                {matchItem.matchPassword && <span className="ms-2">🔒</span>}
-                                            </td>
-                                            <td>
-                                                <span className="badge rounded-pill bg-success-subtle text-success">
-                                                    Waiting...
-                                                </span>
-                                            </td>
-                                            <td className="text-center">
-                                                <button 
-                                                    className="btn btn-primary btn-sm px-4"
-                                                    onClick={() => handleJoin(matchItem.id, !!matchItem.matchPassword)}
-                                                >
-                                                    Join
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="3" className="text-center py-5 text-muted">
-                                            No matches found. Create one to start!
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                        <nav>
-                        <ul className="pagination d-flex justify-content-center">
-                            <li className={`page-item ${filter.pageNumber <= 1 ? 'disabled' : ''}`}>
-                                <button className="page-link" onClick={() => setFilter(filter.pageNumber - 1)}>Previous</button>
-                            </li>
-                            {(() => {
-                                let startPage = Math.max(1, filter.pageNumber - 2);
-                            
-                                return [...Array(totalPages<5?totalPages:5)].map((_, i) => {
-                                    const pageNum = startPage + i;
-                                    return (
-                                        <li key={pageNum} className={`page-item ${filter.pageNumber === pageNum ? 'active' : ''}`}>
-                                            <button className="page-link" onClick={() => setFilter(pageNum)}>{pageNum}</button>
-                                        </li>
-                                    );
-                                });
-                            })()}
-                            <li className={`page-item ${filter.pageNumber >= totalPages ? 'disabled' : ''}`}>
-                                <button 
-                                    className="page-link" 
-                                    onClick={() => setFilter({ ...filter, pageNumber: filter.pageNumber + 1 })}
-                                >
-                                    Next
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed'
+        }}>
+            <div className="row pt-5 justify-content-center px-3">
+                
+                <div className="col-lg-7 mb-4">
+                    <div className="card shadow border-0 p-4 bg-white rounded-4 h-100">
+                        <div className="d-flex flex-wrap justify-content-between align-items-center mb-4">
+                            <div>
+                                <h2 className="fw-bold m-0 text-dark">Game Lobby</h2>
+                                <p className="text-muted small mb-0">Welcome back, <strong>{currentPlayerName}</strong>!</p>
+                            </div>
+
+                            <div className="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                                <div className="d-flex align-items-center me-3">
+                                    <div className="text-center px-2 border-end">
+                                        <div className="fw-bold text-success small">{myStats.wins}</div>
+                                        <div className="text-muted x-small" style={{fontSize: '0.6rem'}}>WINS</div>
+                                    </div>
+                                    <div className="text-center px-2">
+                                        <div className="fw-bold text-danger small">{myStats.losses}</div>
+                                        <div className="text-muted x-small" style={{fontSize: '0.6rem'}}>LOSSES</div>
+                                    </div>
+                                </div>
+                                
+                                <button className="btn btn-outline-dark fw-bold shadow-sm" onClick={handleAiMatchCreation}>
+                                     vs AI
                                 </button>
-                            </li>
+                                <button className="btn btn-primary fw-bold shadow-sm" onClick={() => setShowModal(true)}>
+                                    + Create Match
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="table-responsive">
+                            <table className="table table-hover">
+                                <thead className="table-light">
+                                    <tr>
+                                        <th>Host</th>
+                                        <th>Status</th>
+                                        <th className="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {matches.length > 0 ? (
+                                        matches.map((m) => (
+                                            <tr key={m.id} className="align-middle">
+                                                <td className="fw-semibold">
+                                                    {m.player1?.name || m.currentPlayerName}
+                                                    {m.matchPassword && <span className="ms-2">🔒</span>}
+                                                </td>
+                                                <td>{getStatusBadge(m)}</td>
+                                                <td className="text-center">
+                                                    <button 
+                                                        className="btn btn-outline-primary btn-sm px-4 fw-bold"
+                                                        disabled={m.matchStatus !== 0}
+                                                        onClick={() => handleJoin(m.id, !!m.matchPassword)}
+                                                    >
+                                                        {m.matchStatus === 0 ? "Join" : "Full"}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr><td colSpan="3" className="text-center py-5">No games available.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <nav className="mt-auto">
+                            <ul className="pagination justify-content-center mb-0 pt-3">
+                                <li className={`page-item ${filter.pageNumber <= 1 ? 'disabled' : ''}`}>
+                                    <button className="page-link" onClick={() => setFilter({ ...filter, pageNumber: filter.pageNumber - 1 })}>Prev</button>
+                                </li>
+                                <li className="page-item active"><span className="page-link">{filter.pageNumber}</span></li>
+                                <li className={`page-item ${filter.pageNumber >= totalPages ? 'disabled' : ''}`}>
+                                    <button className="page-link" onClick={() => setFilter({ ...filter, pageNumber: filter.pageNumber + 1 })}>Next</button>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+                <div className="col-lg-3">
+                    <div className="card shadow border-0 rounded-4 overflow-hidden">
+                        <div className="card-header bg-dark text-warning text-center fw-bold py-3">
+                             HALL OF FAME
+                        </div>
+                        <ul className="list-group list-group-flush">
+                            {leaderboard.map((p, i) => (
+                                <li key={i} className={`list-group-item d-flex justify-content-between align-items-center py-3 ${p.name === currentPlayerName ? 'bg-warning-subtle' : ''}`}>
+                                    <div>
+                                        <span className={`badge me-2 ${i === 0 ? 'bg-warning text-dark' : 'bg-light text-dark'}`}>#{i + 1}</span>
+                                        <span className={`fw-bold ${p.name === currentPlayerName ? 'text-primary' : ''}`}>
+                                            {p.name} {p.name === currentPlayerName && "(You)"}
+                                        </span>
+                                    </div>
+                                    <div className="text-end">
+                                        <div className="small fw-bold text-primary">{p.wins} Wins</div>
+                                        <div className="text-muted small">{p.losses}L / {p.draws}D</div>
+                                    </div>
+                                </li>
+                            ))}
                         </ul>
-                    </nav>
                     </div>
                 </div>
             </div>
-             {showModal && (
-    <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-        <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-                <div className="modal-header">
-                    <h5 className="modal-title">Create New Match</h5>
-                    <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-                </div>
-                <div className="modal-body">
-                    <p className="text-muted small">If you want a private game, set a password below. Otherwise, leave it blank.</p>
-                    <div className="mb-3">
-                        <label className="form-label fw-bold">Match Password (Optional)</label>
-                        <input 
-                            type="number" 
-                            className="form-control" 
-                            placeholder="e.g. 1234"
-                            value={roomPassword}
-                            onChange={(e) => setRoomPassword(e.target.value)}
-                        />
+
+            {showModal && (
+                <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content border-0 shadow">
+                            <div className="modal-header">
+                                <h5 className="modal-title fw-bold">Create New Match</h5>
+                                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+                            </div>
+                            <div className="modal-body">
+                                <div className="mb-3">
+                                    <label className="form-label fw-bold">Room Password (Optional)</label>
+                                    <input 
+                                        type="number" className="form-control" placeholder="Leave blank for public"
+                                        value={roomPassword} onChange={(e) => setRoomPassword(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button className="btn btn-light" onClick={() => setShowModal(false)}>Cancel</button>
+                                <button className="btn btn-primary px-4" onClick={handleMatchCreation}>Start Game</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div className="modal-footer">
-                    <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                    <button className="btn btn-primary" onClick={handleMatchCreation}>Create & Start</button>
-                </div>
-            </div>
+            )}
         </div>
-    </div>
-)}               
-        </>
     );
 }
+
 export default GetAllMatches;
