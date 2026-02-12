@@ -10,7 +10,7 @@ function GameBoard() {
     const [connection, setConnection] = useState(null);
     const [chatMessage, setChatMessage] = useState("");
     const [chatLog, setChatLog] = useState([]);
-    const api_url = "htpps://thegame-production-9b97.up.railway.app";
+    const api_url = "https://thegame-production-9b97.up.railway.app";
 
     const chatEndRef = useRef(null);
     const connectionRef = useRef(null);
