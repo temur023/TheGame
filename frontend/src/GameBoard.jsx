@@ -108,7 +108,7 @@ function GameBoard() {
     const isGameOver = match?.matchStatus === 2;
 
     return (
-        <div className="w-100 vh-100" style={{
+        <div className="w-100 min-vh-100" style={{
       backgroundImage: `url('https://s3-alpha.figma.com/hub/file/6054887559/58e68a4b-b1a7-40d6-828a-ab80f7c2e9b1-cover.png')`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
