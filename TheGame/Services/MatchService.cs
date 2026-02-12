@@ -48,13 +48,19 @@ public class MatchService(DataContext context, IServiceScopeFactory scopeFactory
             .FirstOrDefaultAsync(m => m.Id == dto.MatchId); 
 
         if (match == null) return new Response<int>(404, "Match Not Found!");
-    
+        if (match.MatchPassword != null)
+        {
+            if (match.MatchPassword != dto.Password)
+            {
+                return new Response<int>(400, "Password is incorrect!");
+            }
+        }
         match.Player2Id = dto.Player2Id;
         match.MatchStatus = MatchStatus.InProgress;
         
         match.CurrentPlayerId = match.Player1Id;
-        match.CurrentPlayerName = match.Player1?.Name ?? "Player 1"; 
-
+        match.CurrentPlayerName = match.Player1?.Name ?? "Player 1";
+        
         await context.SaveChangesAsync();
         return new Response<int>(200, "Joined", match.Id);
     }

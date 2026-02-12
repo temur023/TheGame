@@ -15,6 +15,6 @@ public class GetMatchesDto
     
     public string BoardState { get; set; } = "";
     public string CurrentPlayerName { get; set; } = "";
-    public int? MatchPassword { get; set; }
+    public string? MatchPassword { get; set; }
     public MatchStatus MatchStatus {get; set;}
 }

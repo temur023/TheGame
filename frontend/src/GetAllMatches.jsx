@@ -83,7 +83,7 @@ function GetAllMatches() {
             const dto = {
                 MatchId: matchId,
                 Player2Id: parseInt(playerId),
-                Password: passwordInput ? parseInt(passwordInput) : null
+                Password: passwordInput ? passwordInput : null
             };
 
             const response = await axios.put(`${api_url}/api/Match/join-match`, dto);
@@ -101,7 +101,7 @@ function GetAllMatches() {
             const matchData = {
                 Player1Id: pId,
                 CurrentPlayerName: currentPlayerName || "Guest",
-                MatchPassword: roomPassword ? parseInt(roomPassword, 10) : null
+                MatchPassword: roomPassword || null
             };
 
             const response = await axios.post(`${api_url}/api/Match/create`, matchData);
@@ -244,7 +244,7 @@ function GetAllMatches() {
                                 <div className="mb-3">
                                     <label className="form-label fw-bold">Room Password (Optional)</label>
                                     <input 
-                                        type="number" className="form-control" placeholder="Leave blank for public"
+                                        type="text" className="form-control" placeholder="Leave blank for public"
                                         value={roomPassword} onChange={(e) => setRoomPassword(e.target.value)}
                                     />
                                 </div>

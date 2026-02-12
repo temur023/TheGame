@@ -12,6 +12,6 @@ public class Match
     public string BoardState { get; set; } = "";
     public string CurrentPlayerName { get; set; } = "";
     public int CurrentPlayerId { get; set; }
-    public int? MatchPassword { get; set; }
+    public string? MatchPassword { get; set; } = null;
     public MatchStatus MatchStatus {get; set;}
 }
